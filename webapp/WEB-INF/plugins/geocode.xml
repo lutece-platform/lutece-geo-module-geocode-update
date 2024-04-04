@@ -97,15 +97,15 @@
     <daemons>
 		<daemon>
             <daemon-id>UpdateGeocodeINSEE</daemon-id>
-            <daemon-name>UpdateGeocodeINSEE</daemon-name>
-            <daemon-description>UpdateGeocodeINSEE</daemon-description>
-            <daemon-class>fr.paris.lutece.plugins.geocode.daemon.UpdateGeocodeDaemon</daemon-class>
+            <daemon-name>geocodeupdate.daemon.geocode.updateExistingCities.name</daemon-name>
+            <daemon-description>geocodeupdate.daemon.geocode.updateExistingCities.description</daemon-description>
+            <daemon-class>fr.paris.lutece.plugins.geocodeupdate.daemon.UpdateGeocodeDaemon</daemon-class>
         </daemon>
         <daemon>
             <daemon-id>UpdateNewCityGeocodeDaemon</daemon-id>
-            <daemon-name>UpdateNewCityGeocodeDaemon</daemon-name>
-            <daemon-description>UpdateNewCityGeocodeDaemon</daemon-description>
-            <daemon-class>fr.paris.lutece.plugins.geocode.daemon.UpdateNewCityGeocodeDaemon</daemon-class>
+            <daemon-name>geocodeupdate.daemon.geocode.updateNewCity.name</daemon-name>
+            <daemon-description>geocodeupdate.daemon.geocode.updateNewCity.description</daemon-description>
+            <daemon-class>fr.paris.lutece.plugins.geocodeupdate.daemon.UpdateNewCityGeocodeDaemon</daemon-class>
         </daemon>
     </daemons>
     

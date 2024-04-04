@@ -31,9 +31,9 @@
  *
  * License 1.0
  */
-package fr.paris.lutece.plugins.geocode.service;
+package fr.paris.lutece.plugins.geocodeupdate.service;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -53,13 +53,14 @@ import fr.paris.lutece.plugins.geocodes.business.City;
 import fr.paris.lutece.plugins.geocodes.business.Country;
 import fr.paris.lutece.plugins.geocodes.provider.IGeoCodeProvider;
 import fr.paris.lutece.plugins.geocodes.rs.Constants;
+import fr.paris.lutece.plugins.geocodeupdate.business.CityINSEE;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.httpaccess.HttpAccess;
 import fr.paris.lutece.util.httpaccess.HttpAccessException;
 import fr.paris.lutece.util.httpaccess.InvalidResponseStatus;
 import io.jsonwebtoken.lang.Arrays;
 
-public class GeoCodesINSEE implements IGeoCodeProvider
+public class GeoCodesINSEE
 {
 
     private static final String PROPERTY_API_INSEE_BASE_UR_COMMUNE = "geocodes.api.insee.url.commune";
@@ -74,12 +75,13 @@ public class GeoCodesINSEE implements IGeoCodeProvider
     private static final String PARAMETER_CLIENT_ID = "client_id";
     private static final String PARAMETER_CLIENT_SECRET = "client_secret";
     private static final String PARAMETER_DATE = "date";
+    private static final String PARAMETER_GRANT_TYPE = "grant_type";
+    private static final String PARAMETER_CLIENT_CREDENTIALS = "client_credentials";
 
     private static final String TYPE_AUTHENTIFICATION_BASIC = "Basic";
 
     private static Logger _logger = Logger.getLogger( "lutece.awx" );
 
-    @Override
     public String getId( )
     {
         return Constants.ID_PROVIDER_GEOCODE_INSEE;
@@ -99,8 +101,8 @@ public class GeoCodesINSEE implements IGeoCodeProvider
             HttpAccess httpAccess = new HttpAccess( );
 
             HashMap<String, String> mapHeader = new HashMap<>( );
-            mapHeader.put( "Authorization", "Bearer " + strToken );
-            mapHeader.put( "Accept", "application/json" );
+            mapHeader.put(  HttpHeaders.AUTHORIZATION, "Bearer " + strToken );
+            mapHeader.put( HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON );
 
             String strUrl = strUrlPath + strRelativeUri;
             strJsonResult = httpAccess.doGet( strUrl, null, null, mapHeader, null );
@@ -125,8 +127,8 @@ public class GeoCodesINSEE implements IGeoCodeProvider
 
         return strJsonResult;
     }
-
-    public Optional<City> getCityByDateAndCode( Date dateCity, String strCode )
+    
+    public Optional<CityINSEE> getCityByDateAndCode( Date dateCity, String strCode )
     {
         String strUrl = AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_UR_COMMUNE );
         StringBuilder strValueUrl = new StringBuilder( strCode );
@@ -138,12 +140,12 @@ public class GeoCodesINSEE implements IGeoCodeProvider
 
         ObjectMapper objectMapper = new ObjectMapper( );
         objectMapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
-        City city = null;
+        CityINSEE city = null;
         if ( strCityJson != null && !strCityJson.isEmpty( ) )
         {
             try
             {
-                city = objectMapper.readValue( strCityJson, City.class );
+                city = objectMapper.readValue( strCityJson, CityINSEE.class );
             }
             catch( JsonProcessingException e )
             {
@@ -155,7 +157,7 @@ public class GeoCodesINSEE implements IGeoCodeProvider
         return Optional.ofNullable( city );
     }
 
-    public List<City> getCitiesListByNameAndDate( String strSearchBeginningVal, Date dateCity )
+    public List<CityINSEE> getCitiesListByNameAndDate( String strSearchBeginningVal, Date dateCity )
     {
         String strUrl = AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_UR_COMMUNES_LIST );
         StringBuilder strValueUrl = new StringBuilder( "?filtreNom=" );
@@ -167,12 +169,12 @@ public class GeoCodesINSEE implements IGeoCodeProvider
 
         ObjectMapper objectMapper = new ObjectMapper( );
         objectMapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
-        City [ ] cities = null;
+        CityINSEE [ ] cities = null;
         if ( strCityJson != null && !strCityJson.isEmpty( ) )
         {
             try
             {
-                cities = objectMapper.readValue( strCityJson, City [ ].class );
+                cities = objectMapper.readValue( strCityJson, CityINSEE [ ].class );
             }
             catch( JsonProcessingException e )
             {
@@ -230,7 +232,7 @@ public class GeoCodesINSEE implements IGeoCodeProvider
             mapHeader.put( PARAMETER_CLIENT_SECRET, strAuthSecret );
 
             mapHeader.put( HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON );
-            mapHeader.put( "grant_type", "client_credentials" );
+            mapHeader.put( PARAMETER_GRANT_TYPE, PARAMETER_CLIENT_CREDENTIALS );
 
             strJsonResult = httpAccess.doPost( strUrl, mapHeader );
 
@@ -259,7 +261,7 @@ public class GeoCodesINSEE implements IGeoCodeProvider
         return strToken;
     }
 
-    public List<City> getAllCities( )
+    public List<CityINSEE> getAllCities( )
     {
         String strUrl = AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_URL_ALL_COMMUNES_LIST );
         String strCityJson = "";
@@ -268,12 +270,12 @@ public class GeoCodesINSEE implements IGeoCodeProvider
 
         ObjectMapper objectMapper = new ObjectMapper( );
         objectMapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
-        City [ ] cities = null;
+        CityINSEE [ ] cities = null;
         if ( strCityJson != null && !strCityJson.isEmpty( ) )
         {
             try
             {
-                cities = objectMapper.readValue( strCityJson, City [ ].class );
+                cities = objectMapper.readValue( strCityJson, CityINSEE [ ].class );
             }
             catch( JsonProcessingException e )
             {

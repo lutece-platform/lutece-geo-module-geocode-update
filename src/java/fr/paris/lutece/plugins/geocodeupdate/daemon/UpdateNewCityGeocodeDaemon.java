@@ -31,44 +31,56 @@
  *
  * License 1.0
  */
-package fr.paris.lutece.plugins.geocode.daemon;
+package fr.paris.lutece.plugins.geocodeupdate.daemon;
 
-import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.log4j.Logger;
-
-import fr.paris.lutece.plugins.geocode.service.GeoCodesINSEE;
 import fr.paris.lutece.plugins.geocodes.business.City;
 import fr.paris.lutece.plugins.geocodes.service.GeoCodesLocal;
 import fr.paris.lutece.plugins.geocodes.service.GeoCodesService;
+import fr.paris.lutece.plugins.geocodeupdate.business.CityINSEE;
+import fr.paris.lutece.plugins.geocodeupdate.service.GeoCodesINSEE;
 import fr.paris.lutece.portal.service.daemon.Daemon;
+import fr.paris.lutece.portal.service.util.AppLogService;
 
 public class UpdateNewCityGeocodeDaemon extends Daemon
 {
-    private static Logger _logger = Logger.getLogger( "lutece.awx" );
     public static final String CONSTANTE_CODE_COUNTRY = "99100";
     public static final String CONSTANTE_DATE_MAX = "2999-12-31";
+    public static final String CONSTANTE_DATE_FORMAT = "yyyy-MM-dd";
 
     @Override
     public void run( )
     {
         GeoCodesINSEE geocodeINSEE = new GeoCodesINSEE( );
         GeoCodesLocal geocodeLocal = new GeoCodesLocal( );
-        List<City> lstAllCities = geocodeINSEE.getAllCities( );
-        for ( City newCity : lstAllCities )
+        List<CityINSEE> lstAllCities = geocodeINSEE.getAllCities( );
+        for ( CityINSEE newCity : lstAllCities )
         {
             Optional<City> optCityLocal = geocodeLocal.getCityByDateAndCode( new Date( System.currentTimeMillis( ) ), newCity.getCode( ) );
             if ( optCityLocal.isEmpty( ) )
             {
-                newCity.setDateLastUpdate( new Date( System.currentTimeMillis( ) ) );
-                newCity.setCodeCountry( CONSTANTE_CODE_COUNTRY );
-                newCity.setValue( newCity.getValueMin( ).toUpperCase( ) );
-                newCity.setCodeZone( newCity.getCode( ).substring( 0, 2 ) );
-                newCity.setDateValidityEnd( Date.valueOf( CONSTANTE_DATE_MAX ) );
-                GeoCodesService.createCity( newCity );
-                _logger.debug( "New city created : " + newCity.getCode( ) + " name : " + newCity.getValueMin( ) + " start date : "
+                City newCityINSEE = new City( );
+                newCityINSEE.setDateLastUpdate( new Date( System.currentTimeMillis( ) ) );
+                newCityINSEE.setCode( newCity.getCode( ) );
+                newCityINSEE.setCodeCountry( CONSTANTE_CODE_COUNTRY );
+                newCityINSEE.setValue ( newCity.getValueMin( ).toUpperCase( ) );
+                newCityINSEE.setValueMin ( newCity.getValueMin( ) );
+                newCityINSEE.setValueMinComplete( newCity.getValueMinComplete( ) );
+                newCityINSEE.setCodeZone( newCity.getCode( ).substring( 0, 2 ) );
+                newCityINSEE.setDateValidityStart( newCity.getDateValidityStart( ) );
+                SimpleDateFormat dateFormat = new SimpleDateFormat( CONSTANTE_DATE_FORMAT );
+                try {
+                	newCityINSEE.setDateValidityEnd( dateFormat.parse( CONSTANTE_DATE_MAX ) );
+				} catch (ParseException e) {
+					AppLogService.error( e.getMessage(  ), e );
+				}
+                GeoCodesService.createCity( newCityINSEE );
+                AppLogService.debug( "New city created : " + newCity.getCode( ) + " name : " + newCity.getValueMin( ) + " start date : "
                         + newCity.getDateValidityStartToString( ) );
             }
 

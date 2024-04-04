@@ -31,16 +31,18 @@
  *
  * License 1.0
  */
-package fr.paris.lutece.plugins.geocode.daemon;
+package fr.paris.lutece.plugins.geocodeupdate.daemon;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import fr.paris.lutece.plugins.geocode.service.GeoCodesINSEE;
 import fr.paris.lutece.plugins.geocodes.business.City;
 import fr.paris.lutece.plugins.geocodes.service.GeoCodesService;
+import fr.paris.lutece.plugins.geocodeupdate.business.CityINSEE;
+import fr.paris.lutece.plugins.geocodeupdate.service.GeoCodesINSEE;
 import fr.paris.lutece.portal.service.daemon.Daemon;
+import fr.paris.lutece.portal.service.util.AppLogService;
 
 public class UpdateGeocodeDaemon extends Daemon
 {
@@ -58,15 +60,16 @@ public class UpdateGeocodeDaemon extends Daemon
         for ( City city : lstCities )
         {
 
-            Optional<City> cityOptional = geocode.getCityByDateAndCode( city.getDateValidityStart( ), city.getCode( ) );
+            Optional<CityINSEE> cityOptional = geocode.getCityByDateAndCode( city.getDateValidityStart( ), city.getCode( ) );
             if ( cityOptional.isPresent( ) )
             {
-                City cityINSEE = cityOptional.get( );
+            	CityINSEE cityINSEE = cityOptional.get( );
                 city.setValueMin( cityINSEE.getValueMin( ) );
                 city.setValueMinComplete( cityINSEE.getValueMinComplete( ) );
                 if ( cityINSEE.getDateValidityEnd( ) != null )
                 {
                     city.setDateValidityEnd( cityINSEE.getDateValidityEnd( ) );
+                    AppLogService.debug("Date de fin mise à jour pour " + city.getValueMin( ) + " et date de fin : " + city.getDateValidityEndToString( ) );
                 }
                 city.setDateLastUpdate( new Date( System.currentTimeMillis( ) ) );
                 GeoCodesService.updateCity( city );
