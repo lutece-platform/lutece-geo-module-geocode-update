@@ -33,48 +33,151 @@
  */
 package fr.paris.lutece.plugins.geocodeupdate.daemon;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import fr.paris.lutece.plugins.geocodes.business.City;
+import fr.paris.lutece.plugins.geocodes.business.GeocodesChangesStatusEnum;
 import fr.paris.lutece.plugins.geocodes.service.GeoCodesService;
 import fr.paris.lutece.plugins.geocodeupdate.business.CityINSEE;
 import fr.paris.lutece.plugins.geocodeupdate.service.GeoCodesINSEE;
 import fr.paris.lutece.portal.service.daemon.Daemon;
 import fr.paris.lutece.portal.service.util.AppLogService;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateGeocodeDaemon extends Daemon
 {
+    private static final String CONSTANTE_CODE_COUNTRY = "99100";
+    private static final String CONSTANTE_DATE_MAX = "2999-12-31";
+    private static final String CONSTANTE_DATE_FORMAT = "yyyy-MM-dd";
 
     @Override
     public void run( )
     {
-        updateCity( );
-    }
-    
-    public void updateCity( )
-    {
-    	GeoCodesINSEE geocode = new GeoCodesINSEE( );
+        GeoCodesINSEE geocode = new GeoCodesINSEE( );
         List<City> lstCities = GeoCodesService.getCitiesListByLastDateUpdate( );
-        for ( City city : lstCities )
-        {
+        List<CityINSEE> cityINSEEList = geocode.getAllCities( );
 
-            Optional<CityINSEE> cityOptional = geocode.getCityByDateAndCode( city.getDateValidityStart( ), city.getCode( ) );
-            if ( cityOptional.isPresent( ) )
+        for( CityINSEE cityINSEE : cityINSEEList )
+        {
+            boolean knownCity = false;
+            for ( City city : lstCities )
             {
-            	CityINSEE cityINSEE = cityOptional.get( );
-                city.setValueMin( cityINSEE.getValueMin( ) );
-                city.setValueMinComplete( cityINSEE.getValueMinComplete( ) );
-                if ( cityINSEE.getDateValidityEnd( ) != null )
+                if ( cityINSEE.getCode( ).equals( city.getCode( ) )
+                        && this.areDateSameDay( cityINSEE.getDateValidityStart(), city.getDateValidityStart( ) ) )
                 {
-                    city.setDateValidityEnd( cityINSEE.getDateValidityEnd( ) );
-                    AppLogService.debug("Date de fin mise à jour pour " + city.getValueMin( ) + " et date de fin : " + city.getDateValidityEndToString( ) );
+                    knownCity = true;
+                    this.updateCity(city, cityINSEE);
+                    break;
                 }
-                city.setDateLastUpdate( new Date( System.currentTimeMillis( ) ) );
-                GeoCodesService.updateCity( city );
+            }
+            if(!knownCity)
+            {
+                this.createCity(cityINSEE);
             }
         }
+    }
 
+    private void updateCity( City city, CityINSEE cityINSEE )
+    {
+        boolean changes = false;
+
+        if (!StringUtils.equals(city.getCodeCountry(), cityINSEE.getCodeCountry())
+            && cityINSEE.getCodeCountry() != null)
+        {
+            city.setCodeCountry(cityINSEE.getCodeCountry());
+            changes = true;
+        }
+        if (!StringUtils.equals(city.getCode(), cityINSEE.getCode())
+        && cityINSEE.getCode() != null)
+        {
+            city.setCode(cityINSEE.getCode());
+            changes = true;
+        }
+        if (!StringUtils.equals(city.getValue(), cityINSEE.getValue())
+        && cityINSEE.getValue() != null)
+        {
+            city.setValue(cityINSEE.getValue());
+            changes = true;
+        }
+        if (!StringUtils.equals(city.getCodeZone(), cityINSEE.getCodeZone())
+        && cityINSEE.getCodeZone() != null)
+        {
+            city.setCodeZone(cityINSEE.getCodeZone());
+            changes = true;
+        }
+        if (cityINSEE.getDateValidityStart() != null && !this.areDateSameDay( cityINSEE.getDateValidityStart(), city.getDateValidityStart( ) ))
+        {
+            city.setDateValidityStart(cityINSEE.getDateValidityStart());
+            changes = true;
+        }
+        if (cityINSEE.getDateValidityEnd() != null && !this.areDateSameDay( cityINSEE.getDateValidityEnd(), city.getDateValidityEnd( ) ))
+        {
+            city.setDateValidityEnd(cityINSEE.getDateValidityEnd());
+            changes = true;
+            AppLogService.debug("Date de fin mise à jour pour " + city.getValueMin() + " et date de fin : " + city.getDateValidityEndToString());
+        }
+        if (!StringUtils.equals(city.getValueMin(), cityINSEE.getValueMin())
+        && cityINSEE.getValueMin() != null)
+        {
+            city.setValueMin(cityINSEE.getValueMin());
+            changes = true;
+        }
+        if (!StringUtils.equals(city.getValueMinComplete(), cityINSEE.getValueMinComplete())
+        && cityINSEE.getValueMinComplete() != null)
+        {
+            city.setValueMinComplete(cityINSEE.getValueMinComplete());
+            changes = true;
+        }
+
+        if (changes)
+        {
+            if (!GeoCodesService.checkChangesExistence( city ))
+            {
+                city.setDateLastUpdate(new Date(System.currentTimeMillis()));
+                GeoCodesService.addCityChanges(city, this.getClass().getSimpleName(), GeocodesChangesStatusEnum.PENDING.name());
+            }
+            else
+            {
+                GeoCodesService.updateCityChanges(city, this.getClass().getSimpleName(), GeocodesChangesStatusEnum.PENDING.name());
+            }
+        }
+    }
+    
+    private void createCity( CityINSEE cityINSEE )
+    {
+        City newCity = new City( );
+        newCity.setDateLastUpdate( new Date( System.currentTimeMillis( ) ) );
+        newCity.setCode( cityINSEE.getCode( ) );
+        newCity.setCodeCountry( CONSTANTE_CODE_COUNTRY );
+        newCity.setValue ( cityINSEE.getValueMin( ).toUpperCase( ) );
+        newCity.setValueMin ( cityINSEE.getValueMin( ) );
+        newCity.setValueMinComplete( cityINSEE.getValueMinComplete( ) );
+        newCity.setCodeZone( cityINSEE.getCode( ).substring( 0, 2 ) );
+        newCity.setDateValidityStart( cityINSEE.getDateValidityStart( ) );
+        SimpleDateFormat dateFormat = new SimpleDateFormat( CONSTANTE_DATE_FORMAT );
+        try {
+            newCity.setDateValidityEnd( dateFormat.parse( CONSTANTE_DATE_MAX ) );
+        } catch (ParseException e) {
+            AppLogService.error( e.getMessage(  ), e );
+        }
+        if (!GeoCodesService.checkChangesExistence( newCity ))
+        {
+            GeoCodesService.createCity(newCity, this.getClass().getSimpleName(), GeocodesChangesStatusEnum.PENDING.name());
+        }
+        else
+        {
+            GeoCodesService.updateCityChanges(newCity, this.getClass().getSimpleName(), GeocodesChangesStatusEnum.PENDING.name());
+        }
+        AppLogService.debug("New city created : " + cityINSEE.getCode() + " name : " + cityINSEE.getValueMin() + " start date : "
+                + cityINSEE.getDateValidityStartToString());
+    }
+
+    private boolean areDateSameDay(Date date1, Date date2)
+    {
+        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+        return fmt.format(date1).equals(fmt.format(date2));
     }
 }

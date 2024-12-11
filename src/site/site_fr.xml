@@ -5,7 +5,7 @@
             <item name="EN" href="../index.html" />
         </links>
         
-        <menu name="Plugin geocode">
+        <menu name="Module Geocode Update">
             <item name="Accueil" href="index.html"/>
         </menu>
         

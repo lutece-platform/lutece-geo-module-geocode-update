@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <plug-in>
-    <name>geocode</name>
+    <name>geocode-update</name>
     <class>fr.paris.lutece.portal.service.plugin.PluginDefaultImplementation</class>
     <version>1.0.0-SNAPSHOT</version>
     <documentation></documentation>
@@ -100,12 +100,6 @@
             <daemon-name>geocodeupdate.daemon.geocode.updateExistingCities.name</daemon-name>
             <daemon-description>geocodeupdate.daemon.geocode.updateExistingCities.description</daemon-description>
             <daemon-class>fr.paris.lutece.plugins.geocodeupdate.daemon.UpdateGeocodeDaemon</daemon-class>
-        </daemon>
-        <daemon>
-            <daemon-id>UpdateNewCityGeocodeDaemon</daemon-id>
-            <daemon-name>geocodeupdate.daemon.geocode.updateNewCity.name</daemon-name>
-            <daemon-description>geocodeupdate.daemon.geocode.updateNewCity.description</daemon-description>
-            <daemon-class>fr.paris.lutece.plugins.geocodeupdate.daemon.UpdateNewCityGeocodeDaemon</daemon-class>
         </daemon>
     </daemons>
     

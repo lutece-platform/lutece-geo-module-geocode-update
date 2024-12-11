@@ -33,10 +33,8 @@
  */
 package fr.paris.lutece.plugins.geocodeupdate.service;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -49,9 +47,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import fr.paris.lutece.plugins.geocodes.business.City;
-import fr.paris.lutece.plugins.geocodes.business.Country;
-import fr.paris.lutece.plugins.geocodes.provider.IGeoCodeProvider;
 import fr.paris.lutece.plugins.geocodes.rs.Constants;
 import fr.paris.lutece.plugins.geocodeupdate.business.CityINSEE;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
@@ -63,22 +58,15 @@ import io.jsonwebtoken.lang.Arrays;
 public class GeoCodesINSEE
 {
 
-    private static final String PROPERTY_API_INSEE_BASE_UR_COMMUNE = "geocodes.api.insee.url.commune";
-    private static final String PROPERTY_API_INSEE_BASE_UR_COMMUNES_LIST = "geocodes.api.insee.url.list.communes";
-    private static final String PROPERTY_API_INSEE_BASE_URL_COMMUNES_PREVIOUS_LIST = "geocodes.api.insee.url.list.previous.communes";
     private static final String PROPERTY_API_INSEE_BASE_URL_ALL_COMMUNES_LIST = "geocodes.api.insee.url.list.all.communes";
-    private static final String PROPERTY_API_INSEE_BASE_URL_COUNTRY = "geocodes.api.insee.url.country";
     private static final String PROPERTY_API_INSEE_BASE_URL_TOKEN = "geocodes.api.insee.url.token";
     private static final String PROPERTY_API_INSEE_AUTH_CLIENT_ID = "geocodes.api.insee.url.client.id";
     private static final String PROPERTY_API_INSEE_AUTH_CLIENT_SECRET = "geocodes.api.insee.url.client.secret";
     
     private static final String PARAMETER_CLIENT_ID = "client_id";
     private static final String PARAMETER_CLIENT_SECRET = "client_secret";
-    private static final String PARAMETER_DATE = "date";
     private static final String PARAMETER_GRANT_TYPE = "grant_type";
     private static final String PARAMETER_CLIENT_CREDENTIALS = "client_credentials";
-
-    private static final String TYPE_AUTHENTIFICATION_BASIC = "Basic";
 
     private static Logger _logger = Logger.getLogger( "lutece.awx" );
 
@@ -126,93 +114,6 @@ public class GeoCodesINSEE
         }
 
         return strJsonResult;
-    }
-    
-    public Optional<CityINSEE> getCityByDateAndCode( Date dateCity, String strCode )
-    {
-        String strUrl = AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_UR_COMMUNE );
-        StringBuilder strValueUrl = new StringBuilder( strCode );
-        strValueUrl.append( "?").append( PARAMETER_DATE ).append("=" ).append( dateCity );
-
-        String strCityJson = "";
-        String strToken = getToken( AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_URL_TOKEN ) );
-        strCityJson = doGetJson( strValueUrl.toString( ), strUrl, strToken );
-
-        ObjectMapper objectMapper = new ObjectMapper( );
-        objectMapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
-        CityINSEE city = null;
-        if ( strCityJson != null && !strCityJson.isEmpty( ) )
-        {
-            try
-            {
-                city = objectMapper.readValue( strCityJson, CityINSEE.class );
-            }
-            catch( JsonProcessingException e )
-            {
-                String strError = "API INSEE - Error converting to Object from JSON '" + strCityJson + "' : ";
-                _logger.error( strError + e.getMessage( ), e );
-            }
-        }
-
-        return Optional.ofNullable( city );
-    }
-
-    public List<CityINSEE> getCitiesListByNameAndDate( String strSearchBeginningVal, Date dateCity )
-    {
-        String strUrl = AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_UR_COMMUNES_LIST );
-        StringBuilder strValueUrl = new StringBuilder( "?filtreNom=" );
-        // String strValueUrl = "?filtreNom=" + strSearchBeginningVal + "&date=" + dateCity;
-        strValueUrl.append( strSearchBeginningVal ).append( "&" ).append( PARAMETER_DATE ).append( "=" ).append( dateCity );
-        String strCityJson = "";
-        String strToken = getToken( AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_URL_TOKEN ) );
-        strCityJson = doGetJson( strValueUrl.toString( ), strUrl, strToken );
-
-        ObjectMapper objectMapper = new ObjectMapper( );
-        objectMapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
-        CityINSEE [ ] cities = null;
-        if ( strCityJson != null && !strCityJson.isEmpty( ) )
-        {
-            try
-            {
-                cities = objectMapper.readValue( strCityJson, CityINSEE [ ].class );
-            }
-            catch( JsonProcessingException e )
-            {
-                String strError = "API INSEE - Error converting to Object from JSON '" + strCityJson + "' : ";
-                _logger.error( strError + e.getMessage( ), e );
-            }
-        }
-
-        return Arrays.asList( cities );
-    }
-
-    public Optional<Country> getCountryByCodeAndDate( Date dateCountry, String strCodePays )
-    {
-        String strUrl = AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_URL_COUNTRY );
-        StringBuilder strValueUrl = new StringBuilder( strCodePays );
-        strValueUrl.append( "?" ).append( PARAMETER_DATE ).append( "=" ).append( dateCountry );
-
-        String strCountryJson = "";
-        String strToken = getToken( AppPropertiesService.getProperty( PROPERTY_API_INSEE_BASE_URL_TOKEN ) );
-        strCountryJson = doGetJson( strValueUrl.toString( ), strUrl, strToken );
-
-        ObjectMapper objectMapper = new ObjectMapper( );
-        objectMapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
-        Country country = null;
-        if ( strCountryJson != null && !strCountryJson.isEmpty( ) )
-        {
-            try
-            {
-                country = objectMapper.readValue( strCountryJson, Country.class );
-            }
-            catch( JsonProcessingException e )
-            {
-                String strError = "API INSEE - Error converting to Object from JSON '" + strCountryJson + "' : ";
-                _logger.error( strError + e.getMessage( ), e );
-            }
-        }
-
-        return Optional.ofNullable( country );
     }
     
     public String getToken( String strUrl )

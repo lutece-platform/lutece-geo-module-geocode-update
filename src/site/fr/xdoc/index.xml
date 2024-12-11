@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document>
     <properties>
-        <title>Plugin geocode</title>
+        <title>Module Geocode Update</title>
     </properties>
     <head>
         <!-- Keywords example : "cms, authentication, cms, workflow, seo, collaborative, ..." 
@@ -9,7 +9,7 @@
         <meta name="keywords" content="" />
     </head>
     <body>
-        <section name="Plugin geocode">
+        <section name="Module Geocode Update">
             <!--
             <p>
                 <img src="images/geocode.png" />
